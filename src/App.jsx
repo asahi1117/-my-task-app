@@ -1,122 +1,136 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import TaskItem from "./components/TaskItem";
 
-function App() {
-  const [count, setCount] = useState(0)
+const FILTERS = [
+  { id: "all", label: "すべて" },
+  { id: "active", label: "未完了" },
+  { id: "done", label: "完了済み" },
+];
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+function loadTasks() {
+  const saved = localStorage.getItem("tasks");
+  if (!saved) {
+    return [];
+  }
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  try {
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
 }
 
-export default App
+function App() {
+  const [tasks, setTasks] = useState(loadTasks);
+  const [input, setInput] = useState("");
+  const [filter, setFilter] = useState("all");
+
+  useEffect(() => {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+  }, [tasks]);
+
+  const addTask = (event) => {
+    event.preventDefault();
+    const text = input.trim();
+    if (text === "") {
+      return;
+    }
+
+    setTasks([...tasks, { id: Date.now(), text, done: false }]);
+    setInput("");
+  };
+
+  const toggleTask = (id) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, done: !task.done } : task,
+      ),
+    );
+  };
+
+  const deleteTask = (id) => {
+    setTasks(tasks.filter((task) => task.id !== id));
+  };
+
+  const visibleTasks = tasks.filter((task) => {
+    if (filter === "active") {
+      return !task.done;
+    }
+    if (filter === "done") {
+      return task.done;
+    }
+    return true;
+  });
+
+  const remainingCount = tasks.filter((task) => !task.done).length;
+
+  return (
+    <div className="min-h-svh bg-stone-100 text-stone-800">
+      <main className="max-w-md mx-auto p-4">
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold">タスク管理</h1>
+          <p className="text-stone-600 text-sm mt-1">
+            未完了 {remainingCount} 件 / 全 {tasks.length} 件
+          </p>
+        </header>
+
+        <form onSubmit={addTask} className="flex gap-2 mb-4">
+          <input
+            className="border border-stone-300 bg-white rounded-lg px-3 py-2 flex-1 min-w-0"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="新しいタスクを入力..."
+            aria-label="新しいタスク"
+          />
+          <button
+            type="submit"
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 shrink-0"
+          >
+            追加
+          </button>
+        </form>
+
+        <div className="flex gap-2 mb-4" role="tablist" aria-label="フィルター">
+          {FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={filter === item.id}
+              onClick={() => setFilter(item.id)}
+              className={`px-3 py-1.5 rounded-full text-sm ${
+                filter === item.id
+                  ? "bg-indigo-600 text-white"
+                  : "bg-white text-stone-600 hover:bg-stone-200"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <ul className="space-y-2">
+          {visibleTasks.map((task) => (
+            <TaskItem
+              key={task.id}
+              task={task}
+              onToggle={toggleTask}
+              onDelete={deleteTask}
+            />
+          ))}
+        </ul>
+
+        {visibleTasks.length === 0 && (
+          <p className="text-center text-stone-400 mt-8">
+            {tasks.length === 0
+              ? "タスクがありません"
+              : "この条件のタスクはありません"}
+          </p>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default App;
