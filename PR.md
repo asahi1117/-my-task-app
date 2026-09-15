@@ -2,7 +2,7 @@
 
 ## 提出URL
 
-- リポジトリ: https://github.com/asahi1117/my-task-app
+- リポジトリ: https://github.com/asahi1117/-my-task-app
 - 作業ブランチ: `feat/task-app`（`main` は Vite React テンプレート、実装はこのブランチ）
 
 ## stateの一覧
