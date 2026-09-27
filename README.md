@@ -1,16 +1,38 @@
-# React + Vite
+# PH1復習クイズ
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+PH1で学んだ **HTML / Tailwind / JavaScript / React** の基本を、4択クイズで確かめるアプリです。
+1問ずつ答えると、その場で正誤と一言解説が出て、最後に点数と「間違えた問題の振り返り」がまとまります。
+ベストスコアは `localStorage` に保存されるので、リロードしても残ります。
 
-Currently, two official plugins are available:
+## 使い方
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+pnpm install
+pnpm run dev     # 開発サーバー
+pnpm run build   # 本番ビルド（dist/ に出力）
+pnpm run preview # ビルド結果の確認
+pnpm run lint    # oxlint
+```
 
-## React Compiler
+## 使った技術
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19（関数コンポーネント / useState / useEffect）
+- Tailwind CSS v4（`@tailwindcss/vite` プラグイン）
+- Vite 8（`base: './'` で GitHub Pages のサブディレクトリに対応）
+- localStorage（ベストスコアの保存）
 
-## Expanding the Oxlint configuration
+## ファイル構成
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```
+src/
+├── App.jsx                     state と画面の出し分けを持つ親
+├── data/questions.js           問題データ（全10問）
+└── components/
+    ├── StartScreen.jsx         スタート画面
+    ├── ProgressBar.jsx         進捗バー
+    ├── QuestionCard.jsx        問題・解説・次へボタン
+    ├── ChoiceButton.jsx        選択肢1つ分
+    └── ResultScreen.jsx        結果と振り返り
+```
+
+実装前に書いた要件分解表は [`docs/requirements.md`](docs/requirements.md) にあります。

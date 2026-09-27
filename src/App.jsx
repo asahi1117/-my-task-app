@@ -1,122 +1,124 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import { QUESTIONS } from "./data/questions";
+import StartScreen from "./components/StartScreen";
+import ProgressBar from "./components/ProgressBar";
+import QuestionCard from "./components/QuestionCard";
+import ResultScreen from "./components/ResultScreen";
 
-function App() {
-  const [count, setCount] = useState(0)
+const BEST_SCORE_KEY = "ph1-quiz-best-score";
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+function loadBestScore() {
+  const saved = localStorage.getItem(BEST_SCORE_KEY);
+  const parsed = Number(saved);
 
-      <div className="ticks"></div>
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > QUESTIONS.length) {
+    return 0;
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  return parsed;
 }
 
-export default App
+function App() {
+  const [screen, setScreen] = useState("start");
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(null);
+  const [answers, setAnswers] = useState([]);
+  const [bestScore, setBestScore] = useState(loadBestScore);
+
+  useEffect(() => {
+    localStorage.setItem(BEST_SCORE_KEY, String(bestScore));
+  }, [bestScore]);
+
+  const currentQuestion = QUESTIONS[currentIndex];
+  const score = answers.filter((answer) => answer.isCorrect).length;
+  const wrongAnswers = answers
+    .filter((answer) => !answer.isCorrect)
+    .map((answer) => ({
+      question: QUESTIONS.find((question) => question.id === answer.questionId),
+      selectedIndex: answer.selectedIndex,
+    }));
+
+  const startQuiz = () => {
+    setScreen("quiz");
+    setCurrentIndex(0);
+    setSelectedIndex(null);
+    setAnswers([]);
+  };
+
+  const selectChoice = (choiceIndex) => {
+    if (selectedIndex !== null) {
+      return;
+    }
+
+    setSelectedIndex(choiceIndex);
+    setAnswers([
+      ...answers,
+      {
+        questionId: currentQuestion.id,
+        selectedIndex: choiceIndex,
+        isCorrect: choiceIndex === currentQuestion.answerIndex,
+      },
+    ]);
+  };
+
+  const goNext = () => {
+    const isLastQuestion = currentIndex === QUESTIONS.length - 1;
+
+    if (!isLastQuestion) {
+      setCurrentIndex(currentIndex + 1);
+      setSelectedIndex(null);
+      return;
+    }
+
+    if (score > bestScore) {
+      setBestScore(score);
+    }
+    setScreen("result");
+  };
+
+  return (
+    <div className="min-h-svh bg-gradient-to-b from-indigo-50 via-white to-sky-50 text-slate-800">
+      <main className="mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
+        {screen === "start" && (
+          <StartScreen
+            totalQuestions={QUESTIONS.length}
+            bestScore={bestScore}
+            onStart={startQuiz}
+          />
+        )}
+
+        {screen === "quiz" && (
+          <>
+            <div className="mb-4">
+              <ProgressBar current={answers.length} total={QUESTIONS.length} />
+            </div>
+            <QuestionCard
+              question={currentQuestion}
+              questionNumber={currentIndex + 1}
+              totalQuestions={QUESTIONS.length}
+              selectedIndex={selectedIndex}
+              isLastQuestion={currentIndex === QUESTIONS.length - 1}
+              onSelect={selectChoice}
+              onNext={goNext}
+            />
+            <p className="mt-4 text-center text-sm text-slate-500">
+              ここまで {score} 問正解
+            </p>
+          </>
+        )}
+
+        {screen === "result" && (
+          <ResultScreen
+            score={score}
+            total={QUESTIONS.length}
+            bestScore={bestScore}
+            wrongAnswers={wrongAnswers}
+            onRestart={startQuiz}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default App;
